@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin
 Disallow: /api
 
-Sitemap: https://shards-connect.support/sitemap.xml
+Sitemap: https://shards.qzz.io/sitemap.xml
