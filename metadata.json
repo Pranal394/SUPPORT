@@ -1,0 +1,6 @@
+{
+  "name": "Shards Connect Support",
+  "description": "Official support portal for Shards branches featuring secure ticket management, live chat, and departmental dashboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

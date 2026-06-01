@@ -1,0 +1,131 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      let data = getUserData();
+      return isSignedIn() && (data.role == 'admin' || request.auth.token.email == 'pranalshrivastav62@gmail.com');
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email == 'pranalshrivastav62@gmail.com';
+    }
+
+    function isStaffForDept(dept) {
+      let data = getUserData();
+      return isSignedIn() && (data.role == 'admin' || (data.role == 'staff' && dept in data.assignedDepartments) || request.auth.token.email == 'pranalshrivastav62@gmail.com');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'role', 'createdAt']) &&
+             data.keys().size() <= 5 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['admin', 'staff', 'user'] &&
+             data.createdAt == request.time;
+    }
+
+    function isValidTicket(data) {
+      return data.keys().hasAll(['userId', 'userEmail', 'subject', 'description', 'department', 'status', 'createdAt', 'updatedAt']) &&
+             data.keys().size() == 8 &&
+             data.userId == request.auth.uid &&
+             data.userEmail == request.auth.token.email &&
+             data.subject is string && data.subject.size() >= 5 && data.subject.size() <= 200 &&
+             data.description is string && data.description.size() >= 10 && data.description.size() <= 5000 &&
+             data.department in ["Shards Connect", "Shards Shields", "Shards Security", "Suraksha Sankalp - Shards Connect", "Cif Shards Connect"] &&
+             data.status in ['open', 'pending', 'closed'] &&
+             data.createdAt == request.time &&
+             data.updatedAt == request.time;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['ticketId', 'senderId', 'senderEmail', 'senderRole', 'text', 'timestamp']) &&
+             data.keys().size() == 6 &&
+             data.senderId == request.auth.uid &&
+             data.senderEmail == request.auth.token.email &&
+             data.text is string && data.text.size() > 0 && data.text.size() <= 2000 &&
+             data.timestamp == request.time;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['adminId', 'adminEmail', 'action', 'timestamp']) &&
+             data.adminId == request.auth.uid &&
+             data.adminEmail == request.auth.token.email &&
+             data.timestamp == request.time;
+    }
+
+    // --- Collections ---
+
+    // USERS
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().role == 'user';
+      allow update: if isSignedIn() && (
+        // Super Admin can update roles
+        (isSuperAdmin() && incoming().diff(existing()).affectedKeys().hasAny(['role', 'assignedDepartments'])) ||
+        // User can update their own non-role fields (though we don't have many yet)
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']) && incoming().role == existing().role)
+      );
+    }
+
+    // TICKETS
+    match /tickets/{ticketId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaffForDept(resource.data.department));
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaffForDept(resource.data.department));
+      allow create: if isSignedIn() && isValidTicket(incoming());
+      allow update: if isSignedIn() && (
+        // Owner updates
+        (resource.data.userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['subject', 'description', 'updatedAt', 'status']) && incoming().status == 'open' && existing().status == 'open') ||
+        // Staff updates (status routing)
+        (isStaffForDept(resource.data.department) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+      );
+    }
+
+    // MESSAGES
+    match /tickets/{ticketId}/messages/{messageId} {
+      function canAccessTicket() {
+        let ticket = get(/databases/$(database)/documents/tickets/$(ticketId)).data;
+        return ticket.userId == request.auth.uid || isStaffForDept(ticket.department);
+      }
+      allow read: if isSignedIn() && canAccessTicket();
+      allow create: if isSignedIn() && canAccessTicket() && isValidMessage(incoming()) && incoming().ticketId == ticketId;
+    }
+
+    // AUDIT LOGS
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidAuditLog(incoming());
+    }
+  }
+}
