@@ -49,7 +49,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.keys().hasAll(['email', 'role', 'createdAt']) &&
-             data.keys().size() <= 5 &&
+             data.keys().size() <= 8 &&
              data.email is string && data.email.size() <= 256 &&
              data.role in ['admin', 'staff', 'user'] &&
              data.createdAt == request.time;
@@ -90,7 +90,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && incoming().role == 'user';
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (incoming().role == 'user' || (incoming().role == 'admin' && request.auth.token.email == 'pranalshrivastav62@gmail.com'));
       allow update: if isSignedIn() && (
         // Super Admin can update roles
         (isSuperAdmin() && incoming().diff(existing()).affectedKeys().hasAny(['role', 'assignedDepartments'])) ||
