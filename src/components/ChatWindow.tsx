@@ -31,6 +31,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
         ...doc.data()
       })) as Message[];
       setMessages(msgs);
+    }, (error) => {
+      console.error("Chat messages snapshot error:", error);
     });
 
     return () => unsubscribe();

@@ -31,6 +31,9 @@ const UserDashboard: React.FC = () => {
       })) as Ticket[];
       setTickets(ticketsData);
       setLoading(false);
+    }, (error) => {
+      console.error("User dashboard tickets snapshot error:", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();

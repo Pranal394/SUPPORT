@@ -1,9 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { signInWithGoogle } from '../lib/firebase';
-import { Shield, Lock, Fingerprint, Briefcase, Heart, CheckCircle2, ChevronRight, MessageSquare, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { Shield, Lock, Fingerprint, Briefcase, Heart, CheckCircle2, ChevronRight, MessageSquare, ClipboardCheck, BarChart3, AlertTriangle, ExternalLink } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const LandingPage: React.FC = () => {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    setIsLoggingIn(true);
+    setLoginError(null);
+    try {
+      await signInWithGoogle();
+    } catch (err: unknown) {
+      console.error("Sign-in error:", err);
+      const errorInstance = err as { message?: string } | null;
+      const errMsg = errorInstance?.message || String(err);
+      if (errMsg.includes('auth/unauthorized-domain') || errMsg.includes('unauthorized-domain')) {
+        setLoginError('unauthorized-domain');
+      } else if (errMsg.includes('auth/popup-blocked') || errMsg.includes('popup-blocked')) {
+        setLoginError('popup-blocked');
+      } else if (errMsg.includes('auth/popup-closed-by-user') || errMsg.includes('popup-closed-by-user')) {
+        setLoginError('popup-closed-by-user');
+      } else {
+        setLoginError(errMsg);
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   return (
     <div className="space-y-20 pb-20">
       {/* Hero Section */}
@@ -33,6 +59,52 @@ const LandingPage: React.FC = () => {
           >
             Unified ticketing and live chat system for all Shards branches. Register your technical grievances with the official Copyright Infringement Framework (CIF) and Security departments.
           </motion.p>
+
+          {loginError && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-3"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-bold text-sm">Firebase Authentication Configuration Needed</h4>
+                  {loginError === 'unauthorized-domain' ? (
+                    <div className="text-xs text-amber-800 space-y-2 mt-1">
+                      <p>
+                        This domain is not yet authorized in your Firebase Project (<strong>shardsconnect</strong>). To fix this and allow logging in:
+                      </p>
+                      <ol className="list-decimal pl-4 space-y-1">
+                        <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="underline font-semibold flex inline-flex items-center gap-1">Firebase Console <ExternalLink className="w-3 h-3" /></a>.</li>
+                        <li>Navigate to <strong>Authentication</strong> &gt; <strong>Settings</strong> &gt; <strong>Authorized domains</strong>.</li>
+                        <li>Add these exact domains to the list:
+                          <ul className="list-disc pl-4 mt-1 space-y-1 font-mono text-amber-950">
+                            <li>shards.qzz.io</li>
+                            <li>ais-dev-ydog6uqaruhzzhgwytnxtg-782111357127.asia-southeast1.run.app</li>
+                            <li>ais-pre-ydog6uqaruhzzhgwytnxtg-782111357127.asia-southeast1.run.app</li>
+                          </ul>
+                        </li>
+                      </ol>
+                    </div>
+                  ) : loginError === 'popup-blocked' ? (
+                    <p className="text-xs text-amber-800 mt-1">
+                      The sign-in popup was blocked by your browser. Please allow popups for this site and click Sign In again.
+                    </p>
+                  ) : loginError === 'popup-closed-by-user' ? (
+                    <p className="text-xs text-amber-800 mt-1">
+                      The authentication window was closed before completion. Please try signing in again.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-amber-800 mt-1">
+                      {loginError}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -40,11 +112,21 @@ const LandingPage: React.FC = () => {
             className="flex flex-col sm:flex-row items-center gap-4 pt-4"
           >
             <button 
-              onClick={signInWithGoogle}
-              className="w-full sm:w-auto bg-blue-900 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-all flex items-center justify-center gap-2 group"
+              onClick={handleLogin}
+              disabled={isLoggingIn}
+              className="w-full sm:w-auto bg-blue-900 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-900/20 hover:bg-blue-800 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
             >
-              Sign In to Submit Ticket
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              {isLoggingIn ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Signing In...
+                </>
+              ) : (
+                <>
+                  Sign In to Submit Ticket
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
             <div className="flex items-center gap-8 text-gray-400">
               <div className="flex items-center gap-2">

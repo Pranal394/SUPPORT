@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, limit, where } from 'firebase/firestore';
 import { Ticket, AuditLog, Department } from '../types';
 import ChatWindow from './ChatWindow';
 import DeptManager from './DeptManager';
@@ -23,10 +23,21 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (!profile) return;
 
-    // Filter tickets by allowed departments if not admin
-    const q = query(collection(db, 'tickets'), orderBy('createdAt', 'desc'));
+    let q;
+    if (profile.role === 'admin' || isSuperAdmin) {
+      q = query(collection(db, 'tickets'), orderBy('createdAt', 'desc'));
+    } else if (profile.role === 'staff' && profile.assignedDepartments && profile.assignedDepartments.length > 0) {
+      q = query(
+        collection(db, 'tickets'),
+        where('department', 'in', profile.assignedDepartments),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      // Default standard users or staff with no departments assigned shouldn't query everything
+      setTickets([]);
+      return;
+    }
     
-    // In code we also filter for extra safety although rules handle it
     const unsubscribe = onSnapshot(q, (snapshot) => {
       let ticketsData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -39,10 +50,12 @@ const AdminDashboard: React.FC = () => {
       }
 
       setTickets(ticketsData);
+    }, (error) => {
+      console.error("Admin dashboard tickets snapshot error:", error);
     });
 
     return () => unsubscribe();
-  }, [profile]);
+  }, [profile, isSuperAdmin]);
 
   useEffect(() => {
     if (!isSuperAdmin) return;
@@ -50,6 +63,8 @@ const AdminDashboard: React.FC = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AuditLog[];
       setAuditLogs(logs);
+    }, (error) => {
+      console.error("Admin dashboard audit logs snapshot error:", error);
     });
     return () => unsubscribe();
   }, [isSuperAdmin]);

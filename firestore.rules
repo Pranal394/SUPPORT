@@ -8,11 +8,15 @@ service cloud.firestore {
 
     // --- Helper Functions ---
     function isSignedIn() {
-      return request.auth != null && request.auth.token.email_verified == true;
+      return request.auth != null;
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasUserData() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function getUserData() {
@@ -20,8 +24,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      let data = getUserData();
-      return isSignedIn() && (data.role == 'admin' || request.auth.token.email == 'pranalshrivastav62@gmail.com');
+      return isSignedIn() && (
+        request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
+        (hasUserData() && getUserData().role == 'admin')
+      );
     }
 
     function isSuperAdmin() {
@@ -29,8 +35,13 @@ service cloud.firestore {
     }
 
     function isStaffForDept(dept) {
-      let data = getUserData();
-      return isSignedIn() && (data.role == 'admin' || (data.role == 'staff' && dept in data.assignedDepartments) || request.auth.token.email == 'pranalshrivastav62@gmail.com');
+      return isSignedIn() && (
+        request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
+        (hasUserData() && (
+          getUserData().role == 'admin' ||
+          (getUserData().role == 'staff' && dept in getUserData().assignedDepartments)
+        ))
+      );
     }
 
     function isValidId(id) {
