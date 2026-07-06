@@ -1,10 +1,10 @@
 {
-  "projectId": "fluid-practice-56tp2",
-  "appId": "1:120543638527:web:6733b7a24616c52ae36dca",
-  "apiKey": "AIzaSyDWOecTisAL8CxKrsbhZIqCjCPl7vwEfjc",
-  "authDomain": "fluid-practice-56tp2.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-23c324b0-42a9-4025-b606-208325fa2c93",
-  "storageBucket": "fluid-practice-56tp2.firebasestorage.app",
-  "messagingSenderId": "120543638527",
+  "projectId": "shardsconnect",
+  "appId": "1:1014759488861:web:a3c6f549451f22f891bcb4",
+  "apiKey": "AIzaSyDB3LiiSAl2BrMhNiUuR-hQgdXOqaOEjHk",
+  "authDomain": "shardsconnect.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-shardsconnectsup-23c324b0-42a9-4025-b606-208325fa2c93",
+  "storageBucket": "shardsconnect.firebasestorage.app",
+  "messagingSenderId": "1014759488861",
   "measurementId": ""
 }
