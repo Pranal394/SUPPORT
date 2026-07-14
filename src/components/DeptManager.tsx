@@ -99,7 +99,7 @@ const DeptManager: React.FC = () => {
                 className="w-full pl-12 pr-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-900 transition-all outline-none"
               />
             </div>
-            <p className="text-[10px] text-gray-400 italic pl-1">Note: The user must have logged into the Shards Connect portal at least once to be identified.</p>
+            <p className="text-[10px] text-gray-400 italic pl-1">Note: The user must have logged into the Shards Citadel portal at least once to be identified.</p>
           </div>
 
           <div className="space-y-4">

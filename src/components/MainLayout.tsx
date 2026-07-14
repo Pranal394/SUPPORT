@@ -46,10 +46,10 @@ const MainLayout: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
               <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                <Shield className="w-5 h-5" /> Shards Connect
+                <Shield className="w-5 h-5" /> Shards Citadel
               </h3>
               <p className="text-blue-100 text-sm">
-                Official support portal for all Shards branches. Secure, reliable, and professional technical assistance.
+                Official support portal for all Shards branches. Secure, reliable, and professional technical assistance. Formerly Shards Connect.
               </p>
             </div>
             <div>
@@ -58,7 +58,7 @@ const MainLayout: React.FC = () => {
                 <li className="flex items-center gap-2"><Lock className="w-4 h-4" /> Shards Shields</li>
                 <li className="flex items-center gap-2"><Fingerprint className="w-4 h-4" /> Shards Security</li>
                 <li className="flex items-center gap-2"><Heart className="w-4 h-4" /> Suraksha Sankalp</li>
-                <li className="flex items-center gap-2"><Briefcase className="w-4 h-4" /> Cif Shards Connect</li>
+                <li className="flex items-center gap-2"><Briefcase className="w-4 h-4" /> CIF Shards Citadel</li>
               </ul>
             </div>
             <div>
@@ -81,7 +81,7 @@ const MainLayout: React.FC = () => {
             </div>
           </div>
           <div className="border-t border-blue-800 mt-12 pt-8 text-center text-sm text-blue-200">
-            &copy; {new Date().getFullYear()} Shards Connect. All rights reserved. Professional Support Infrastructure.
+            &copy; {new Date().getFullYear()} Shards Citadel (Formerly Shards Connect). All rights reserved. Professional Support Infrastructure.
           </div>
         </div>
       </footer>

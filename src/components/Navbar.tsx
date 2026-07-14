@@ -22,7 +22,10 @@ const Navbar: React.FC<NavbarProps> = ({ setView, currentView }) => {
             className="flex items-center gap-2 text-blue-900 font-bold text-xl tracking-tight hover:opacity-80 transition-opacity"
           >
             <Shield className="w-6 h-6" fill="currentColor" />
-            <span>SHARDS<span className="text-gray-400 font-light ml-1">CONNECT</span></span>
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-lg font-extrabold tracking-tight">SHARDS <span className="text-blue-600 font-black">CITADEL</span></span>
+              <span className="text-[9px] text-gray-400 font-medium font-mono">Formerly Shards Connect</span>
+            </div>
           </button>
 
           {user && (

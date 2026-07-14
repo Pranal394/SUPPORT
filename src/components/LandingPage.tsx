@@ -38,9 +38,12 @@ const LandingPage: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-widest"
+            className="inline-flex flex-col sm:flex-row sm:items-center gap-2"
           >
-            <Shield className="w-4 h-4" /> Official Support Portal
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-widest">
+              <Shield className="w-4 h-4" /> Official Support Portal
+            </div>
+            <span className="text-xs text-gray-400 font-mono pl-1">Formerly Known as Shards Connect</span>
           </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -48,7 +51,7 @@ const LandingPage: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-6xl font-extrabold text-blue-900 tracking-tight"
           >
-            Secure Technical <br />
+            Shards Citadel <br />
             <span className="text-gray-400">Support Infrastructure</span>
           </motion.h1>
           <motion.p 
@@ -148,7 +151,7 @@ const LandingPage: React.FC = () => {
              className="grid grid-cols-2 gap-4"
           >
             {[
-              { icon: Shield, label: 'Shards Connect', color: 'bg-blue-500' },
+              { icon: Shield, label: 'Shards Citadel', color: 'bg-blue-500' },
               { icon: Lock, label: 'Shards Shields', color: 'bg-indigo-500' },
               { icon: Fingerprint, label: 'Shards Security', color: 'bg-emerald-500' },
               { icon: Briefcase, label: 'CIF Framework', color: 'bg-amber-500' },
@@ -165,7 +168,7 @@ const LandingPage: React.FC = () => {
       {/* Trust Badges / Branches */}
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         {[
-          { name: 'Shards Connect', icon: Shield, desc: 'Central technical bridge' },
+          { name: 'Shards Citadel', icon: Shield, desc: 'Central technical bridge (Formerly Shards Connect)' },
           { name: 'Shards Shields', icon: Lock, desc: 'Infrastructure protection' },
           { name: 'Shards Security', icon: Fingerprint, desc: 'Cyber vigilance' },
           { name: 'Suraksha Sankalp', icon: Heart, desc: 'Safety commitment' },
