@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, handleFirestoreError, OperationType } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, FirestoreError } from 'firebase/firestore';
 import { Department, TicketStatus } from '../types';
 import { LucideProps, X, Send, Shield, Lock, Fingerprint, Heart, Briefcase } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -46,9 +46,10 @@ const TicketForm: React.FC<TicketFormProps> = ({ onClose, onSuccess }) => {
         updatedAt: serverTimestamp(),
       });
       onSuccess();
-    } catch (err: unknown) {
+    } catch (err) {
       console.error("Error creating ticket:", err);
       setError("Failed to submit ticket. Please ensure all fields are valid.");
+      handleFirestoreError(err as FirestoreError, OperationType.CREATE, 'tickets');
     } finally {
       setIsSubmitting(false);
     }

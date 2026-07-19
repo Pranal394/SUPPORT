@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, handleFirestoreError, OperationType } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, updateDoc, FirestoreError } from 'firebase/firestore';
 import { Ticket, Message, TicketStatus } from '../types';
 import { Send, ArrowLeft, MoreVertical, MessageSquare } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -31,8 +31,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
         ...doc.data()
       })) as Message[];
       setMessages(msgs);
-    }, (error) => {
+    }, (error: FirestoreError) => {
       console.error("Chat messages snapshot error:", error);
+      handleFirestoreError(error, OperationType.GET, `tickets/${ticket.id}/messages`);
     });
 
     return () => unsubscribe();
@@ -49,8 +50,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
     if (!user || !newMessage.trim() || isSending) return;
 
     setIsSending(true);
+    const messagesPath = `tickets/${ticket.id}/messages`;
     try {
-      await addDoc(collection(db, `tickets/${ticket.id}/messages`), {
+      await addDoc(collection(db, messagesPath), {
         ticketId: ticket.id,
         senderId: user.uid,
         senderEmail: user.email,
@@ -58,12 +60,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
         text: newMessage.trim(),
         timestamp: serverTimestamp(),
       });
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setIsSending(false);
+      handleFirestoreError(err as FirestoreError, OperationType.WRITE, messagesPath);
+      return;
+    }
+
+    try {
       await updateDoc(doc(db, 'tickets', ticket.id), {
         updatedAt: serverTimestamp()
       });
       setNewMessage('');
     } catch (err) {
-      console.error("Error sending message:", err);
+      console.error("Error updating ticket timestamp:", err);
+      handleFirestoreError(err as FirestoreError, OperationType.UPDATE, `tickets/${ticket.id}`);
     } finally {
       setIsSending(false);
     }
@@ -77,6 +88,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
       });
     } catch (err) {
       console.error("Error updating status:", err);
+      handleFirestoreError(err as FirestoreError, OperationType.UPDATE, `tickets/${ticket.id}`);
     }
   };
 
@@ -173,7 +185,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
                 </div>
                 <div className="flex items-center gap-2 px-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                    {isMe ? 'You' : isStaff ? `SHARDS STAFF: ${msg.senderEmail.split('@')[0]}` : msg.senderEmail.split('@')[0]}
+                    {isMe ? 'You' : isStaff ? 'SHARDS SUPPORT TEAM' : msg.senderEmail.split('@')[0]}
                   </span>
                   <span className="text-[10px] text-gray-300">
                     {msg.timestamp?.toDate() ? new Date(msg.timestamp.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}

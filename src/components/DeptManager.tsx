@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../lib/firebase';
-import { useAuth } from '../contexts/AuthContext';
-import { collection, query, where, getDocs, updateDoc, doc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useAuth, handleFirestoreError, OperationType } from '../contexts/AuthContext';
+import { collection, query, where, getDocs, updateDoc, doc, addDoc, serverTimestamp, FirestoreError } from 'firebase/firestore';
 import { Department, Role } from '../types';
 import { UserPlus, Shield, Check, X, Search, Briefcase, Lock, Fingerprint, Heart } from 'lucide-react';
 
@@ -62,6 +62,7 @@ const DeptManager: React.FC = () => {
     } catch (err) {
       console.error("Error updating user:", err);
       setMessage({ type: 'error', text: 'Administrative failure. Operation aborted.' });
+      handleFirestoreError(err as FirestoreError, OperationType.UPDATE, 'users');
     } finally {
       setIsSearching(false);
     }

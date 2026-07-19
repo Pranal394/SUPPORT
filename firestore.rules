@@ -26,7 +26,7 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
-        (hasUserData() && getUserData().role == 'admin')
+        (hasUserData() && getUserData().get('role', 'user') == 'admin')
       );
     }
 
@@ -38,8 +38,8 @@ service cloud.firestore {
       return isSignedIn() && (
         request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
         (hasUserData() && (
-          getUserData().role == 'admin' ||
-          (getUserData().role == 'staff' && 'assignedDepartments' in getUserData() && dept in getUserData().assignedDepartments)
+          getUserData().get('role', 'user') == 'admin' ||
+          (getUserData().get('role', 'user') == 'staff' && getUserData().get('assignedDepartments', []).hasAny([dept]))
         ))
       );
     }
@@ -106,7 +106,7 @@ service cloud.firestore {
         // Super Admin can update roles
         (isSuperAdmin() && incoming().diff(existing()).affectedKeys().hasAny(['role', 'assignedDepartments'])) ||
         // User can update their own non-role fields (though we don't have many yet)
-        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']) && incoming().role == existing().role)
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']) && incoming().get('role', 'user') == existing().get('role', 'user'))
       );
     }
 
