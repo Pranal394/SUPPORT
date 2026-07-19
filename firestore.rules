@@ -25,18 +25,18 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.token.get('email', '') == 'pranalshrivastav62@gmail.com' ||
+        request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
         (hasUserData() && getUserData().get('role', 'user') == 'admin')
       );
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.get('email', '') == 'pranalshrivastav62@gmail.com';
+      return isSignedIn() && request.auth.token.email == 'pranalshrivastav62@gmail.com';
     }
 
     function isStaffForDept(dept) {
       return isSignedIn() && (
-        request.auth.token.get('email', '') == 'pranalshrivastav62@gmail.com' ||
+        request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
         (hasUserData() && (
           getUserData().get('role', 'user') == 'admin' ||
           (getUserData().get('role', 'user') == 'staff' && getUserData().get('assignedDepartments', []).hasAny([dept]))
@@ -70,7 +70,7 @@ service cloud.firestore {
       return data.keys().hasAll(['userId', 'userEmail', 'subject', 'description', 'department', 'status', 'createdAt', 'updatedAt']) &&
              data.keys().size() == 8 &&
              data.userId == request.auth.uid &&
-             data.userEmail == request.auth.token.get('email', '') &&
+             data.userEmail == request.auth.token.email &&
              data.subject is string && data.subject.size() >= 5 && data.subject.size() <= 200 &&
              data.description is string && data.description.size() >= 10 && data.description.size() <= 5000 &&
              data.department in ["Shards Connect", "Shards Shields", "Shards Security", "Suraksha Sankalp - Shards Connect", "Cif Shards Connect"] &&
@@ -83,7 +83,7 @@ service cloud.firestore {
       return data.keys().hasAll(['ticketId', 'senderId', 'senderEmail', 'senderRole', 'text', 'timestamp']) &&
              data.keys().size() == 6 &&
              data.senderId == request.auth.uid &&
-             data.senderEmail == request.auth.token.get('email', '') &&
+             data.senderEmail == request.auth.token.email &&
              data.text is string && data.text.size() > 0 && data.text.size() <= 2000 &&
              data.timestamp == request.time;
     }
@@ -91,7 +91,7 @@ service cloud.firestore {
     function isValidAuditLog(data) {
       return data.keys().hasAll(['adminId', 'adminEmail', 'action', 'timestamp']) &&
              data.adminId == request.auth.uid &&
-             data.adminEmail == request.auth.token.get('email', '') &&
+             data.adminEmail == request.auth.token.email &&
              data.timestamp == request.time;
     }
 
@@ -101,7 +101,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (incoming().role == 'user' || (incoming().role == 'admin' && request.auth.token.get('email', '') == 'pranalshrivastav62@gmail.com'));
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (incoming().role == 'user' || (incoming().role == 'admin' && request.auth.token.email == 'pranalshrivastav62@gmail.com'));
       allow update: if isSignedIn() && (
         // Super Admin can update roles
         (isSuperAdmin() && incoming().diff(existing()).affectedKeys().hasAny(['role', 'assignedDepartments'])) ||
@@ -128,12 +128,18 @@ service cloud.firestore {
 
     // MESSAGES
     match /tickets/{ticketId}/messages/{messageId} {
-      function canAccessTicket() {
-        let ticket = get(/databases/$(database)/documents/tickets/$(ticketId)).data;
-        return ticket.userId == request.auth.uid || isStaffForDept(ticket.department) || isAdmin();
+      function checkTicketAccess(tid) {
+        let ticket = get(/databases/$(database)/documents/tickets/$(tid)).data;
+        return ticket.userId == request.auth.uid || isStaffForDept(ticket.department);
       }
-      allow read: if isSignedIn() && canAccessTicket();
-      allow create: if isSignedIn() && canAccessTicket() && isValidMessage(incoming()) && incoming().ticketId == ticketId;
+      function canAccessTicket(tid) {
+        return isAdmin() || checkTicketAccess(tid);
+      }
+      allow read: if isSignedIn() && canAccessTicket(ticketId);
+      allow create: if isSignedIn() && (
+        (incoming().ticketId == ticketId && (isAdmin() || isStaffForDept(get(/databases/$(database)/documents/tickets/$(ticketId)).data.department))) ||
+        (canAccessTicket(ticketId) && isValidMessage(incoming()) && incoming().ticketId == ticketId)
+      );
     }
 
     // AUDIT LOGS
