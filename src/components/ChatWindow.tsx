@@ -138,7 +138,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
             </div>
             <div className="space-y-2">
               <p className="text-sm font-bold text-gray-900">Initial Issue Report</p>
-              <p className="text-gray-600 text-sm leading-relaxed">{ticket.description}</p>
+              <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">{ticket.description}</p>
               <div className="flex items-center gap-4 text-[10px] text-gray-400 pt-2 border-t border-gray-50">
                 <span>By: {ticket.userEmail}</span>
                 <span>•</span>
@@ -169,7 +169,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ ticket, onBack, isAdmin: isAdmi
                         : 'bg-white text-gray-900 border border-gray-100 rounded-tl-none'
                   }`}
                 >
-                  <p>{msg.text}</p>
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
                 </div>
                 <div className="flex items-center gap-2 px-1">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
