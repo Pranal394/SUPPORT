@@ -26,7 +26,7 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
-        (hasUserData() && getUserData().get('role', 'user') == 'admin')
+        (hasUserData() && getUserData().role == 'admin')
       );
     }
 
@@ -38,8 +38,8 @@ service cloud.firestore {
       return isSignedIn() && (
         request.auth.token.email == 'pranalshrivastav62@gmail.com' ||
         (hasUserData() && (
-          getUserData().get('role', 'user') == 'admin' ||
-          (getUserData().get('role', 'user') == 'staff' && dept in getUserData().get('assignedDepartments', []))
+          getUserData().role == 'admin' ||
+          (getUserData().role == 'staff' && 'assignedDepartments' in getUserData() && dept in getUserData().assignedDepartments)
         ))
       );
     }
@@ -106,14 +106,14 @@ service cloud.firestore {
         // Super Admin can update roles
         (isSuperAdmin() && incoming().diff(existing()).affectedKeys().hasAny(['role', 'assignedDepartments'])) ||
         // User can update their own non-role fields (though we don't have many yet)
-        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']) && incoming().role == existing().get('role', 'user'))
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']) && incoming().role == existing().role)
       );
     }
 
     // TICKETS
     match /tickets/{ticketId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaffForDept(resource.data.department));
-      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaffForDept(resource.data.department));
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaffForDept(resource.data.department) || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaffForDept(resource.data.department) || isAdmin());
       allow create: if isSignedIn() && isValidTicket(incoming());
       allow update: if isSignedIn() && (
         // Owner updates: subject/description/updatedAt if open, OR ONLY updatedAt if status is anything (e.g. messaging when pending/closed)
@@ -121,8 +121,8 @@ service cloud.firestore {
           (incoming().diff(existing()).affectedKeys().hasOnly(['subject', 'description', 'updatedAt']) && existing().status == 'open') ||
           (incoming().diff(existing()).affectedKeys().hasOnly(['updatedAt']))
         )) ||
-        // Staff updates (status routing)
-        (isStaffForDept(resource.data.department) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        // Staff or Admin updates (status routing)
+        ((isStaffForDept(resource.data.department) || isAdmin()) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
       );
     }
 
@@ -130,7 +130,7 @@ service cloud.firestore {
     match /tickets/{ticketId}/messages/{messageId} {
       function canAccessTicket() {
         let ticket = get(/databases/$(database)/documents/tickets/$(ticketId)).data;
-        return ticket.userId == request.auth.uid || isStaffForDept(ticket.department);
+        return ticket.userId == request.auth.uid || isStaffForDept(ticket.department) || isAdmin();
       }
       allow read: if isSignedIn() && canAccessTicket();
       allow create: if isSignedIn() && canAccessTicket() && isValidMessage(incoming()) && incoming().ticketId == ticketId;
